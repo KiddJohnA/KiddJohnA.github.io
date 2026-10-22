@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>16-Bit Music Machine — by Chron</title>
+<meta name="description" content="A step machine for sequence music: full periods on a 16-step grid, Euclidean spread, transformations, accompaniment. By Jack Kidd / Chron.">
+<style>
+  :root { --bg:#12100c; --panel:#1c1913; --gold:#c9a227; --gold2:#f2d06b; --ink:#f0ead6; --soft:#a99f83; --line:#3a3423; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:Georgia, 'Times New Roman', serif; }
+  .wrap { max-width:980px; margin:0 auto; padding:26px 16px 60px; }
+  h1 { color:var(--gold); font-size:1.9rem; margin:0 0 2px; letter-spacing:.5px; }
+  h1 .dot { color:var(--gold2); }
+  .sub { color:var(--soft); margin:0 0 20px; font-size:.96rem; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:15px; margin-bottom:14px; }
+  label { display:block; font-size:.76rem; text-transform:uppercase; letter-spacing:.12em; color:var(--soft); margin:0 0 6px; }
+  select, input[type=number], textarea { width:100%; background:#0e0c09; color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:8px; font-size:.98rem; font-family:inherit; }
+  textarea { min-height:48px; resize:vertical; }
+  .row { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; }
+  .grid { display:flex; flex-wrap:wrap; gap:5px; margin-top:4px; }
+  .cell { width:52px; padding:6px 2px 5px; text-align:center; border:1px solid var(--line); border-radius:6px; background:#0e0c09; }
+  .cell .v { font-family:Menlo, Consolas, monospace; font-size:1.02rem; display:block; }
+  .cell .nn { font-size:.68rem; color:var(--soft); display:block; margin-top:1px; }
+  .cell.rest { border-style:dashed; color:var(--soft); }
+  .cell.gated { opacity:.38; }
+  .cell.on { background:var(--gold); color:#12100c; border-color:var(--gold); }
+  .cell.on .nn { color:#12100c; }
+  .meta { color:var(--soft); font-size:.92rem; margin-top:10px; }
+  .meta b { color:var(--gold2); }
+  .btns { display:flex; flex-wrap:wrap; gap:9px; margin-top:8px; }
+  button { background:var(--gold); color:#12100c; border:none; border-radius:8px; padding:11px 18px; font-size:.98rem; font-weight:bold; cursor:pointer; font-family:inherit; }
+  button.ghost { background:transparent; color:var(--gold2); border:1px solid var(--gold); font-weight:normal; padding:9px 14px; }
+  button:disabled { opacity:.45; cursor:default; }
+  .chk { display:flex; align-items:center; gap:8px; font-size:.93rem; color:var(--ink); text-transform:none; letter-spacing:0; margin-top:8px; }
+  .chk input { width:17px; height:17px; accent-color:var(--gold); }
+  input[type=range] { width:100%; accent-color:var(--gold); }
+  .foot { color:var(--soft); font-size:.85rem; text-align:center; margin-top:24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>16-Bit Music Machine<span class="dot">.</span></h1>
+  <p class="sub">Sequence music on a sixteen-step grid — Music to Figure: Modulo &amp; Placing is Melody, in the Mapping. By Jack Kidd / Chron.</p>
+
+  <div class="panel">
+    <div class="grid" id="grid"></div>
+    <p class="meta" id="meta"></p>
+  </div>
+
+  <div class="panel">
+    <div class="row">
+      <div>
+        <label for="source">Series (N)</label>
+        <select id="source">
+          <option value="fib" selected>Fibonacci, mod n</option>
+          <option value="primes">Primes, mod n</option>
+          <option value="custom">My own numbers</option>
+        </select>
+      </div>
+      <div>
+        <label for="modn">Modulo (X) — the base</label>
+        <input type="number" id="modn" value="17" min="2" max="64">
+      </div>
+      <div>
+        <label for="scale">Scale (σ′) — the map's notes</label>
+        <select id="scale">
+          <option value="minpent" selected>Minor pentatonic · 5</option>
+          <option value="majpent">Major pentatonic · 5</option>
+          <option value="wholetone">Wholetone · 6</option>
+          <option value="minor">Diatonic minor · 7</option>
+          <option value="major">Diatonic major · 7</option>
+          <option value="diminished">Diminished · 8</option>
+          <option value="chromatic">Chromatic · 12</option>
+        </select>
+      </div>
+      <div>
+        <label for="meter">Meter (h) — steps in the grid</label>
+        <select id="meter">
+          <option value="16" selected>4/4 — 16 sixteenths</option>
+          <option value="20">5/4 — 20 sixteenths</option>
+          <option value="28">7/4 — 28 sixteenths</option>
+        </select>
+      </div>
+    </div>
+    <div id="customBox" style="display:none; margin-top:12px;">
+      <label for="customNums">Your numbers</label>
+      <textarea id="customNums" placeholder="Paste numbers, e.g. 0, 1, 1, 2, 3, 5, 8, 13…"></textarea>
+    </div>
+    <div style="margin-top:12px;">
+      <label for="euclid">Euclidean spread — <span id="euclidVal">16</span> of <span id="euclidMax">16</span> steps sound (the rest fall into (Sets))</label>
+      <input type="range" id="euclid" min="0" max="16" value="16">
+    </div>
+  </div>
+
+  <div class="panel">
+    <label>Transformations (F) — applied to the window on the grid</label>
+    <div class="btns">
+      <button class="ghost" data-t="reverse">Reverse</button>
+      <button class="ghost" data-t="inverse">Inverse</button>
+      <button class="ghost" data-t="transverse">Transverse</button>
+      <button class="ghost" data-t="subverse">Subverse</button>
+      <button class="ghost" data-t="converse">Converse</button>
+      <button class="ghost" data-t="reset">Reset</button>
+    </div>
+    <div class="row" style="margin-top:12px;">
+      <div>
+        <label for="bpm">Tempo — <span id="bpmVal">134</span> BPM</label>
+        <input type="range" id="bpm" min="50" max="220" value="134">
+      </div>
+      <div>
+        <label for="wave">Voice</label>
+        <select id="wave">
+          <option value="sine" selected>Sine</option>
+          <option value="triangle">Triangle</option>
+          <option value="square">Square</option>
+          <option value="sawtooth">Sawtooth</option>
+        </select>
+      </div>
+      <div>
+        <label for="form">Form (π) — measures per export</label>
+        <select id="form">
+          <option value="1">1 measure</option>
+          <option value="2">2 measures</option>
+          <option value="4" selected>4 measures</option>
+          <option value="8">8 measures</option>
+        </select>
+      </div>
+      <div>
+        <label>Switches</label>
+        <label class="chk"><input type="checkbox" id="zeroRest" checked> Zero is a rest</label>
+        <label class="chk"><input type="checkbox" id="phaseWalk" checked> Window walks the period</label>
+        <label class="chk"><input type="checkbox" id="accents" checked> Dynamics (e) — accents</label>
+        <label class="chk"><input type="checkbox" id="embel" checked> Embellishment (φ) — neighbor tones</label>
+        <label class="chk"><input type="checkbox" id="accomp"> Accompaniment (E) — chords</label>
+        <label class="chk" id="voicingRow" style="margin-left:24px;"><input type="checkbox" id="voicing"> Open voicing</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="btns">
+      <button id="playBtn">▶ Play</button>
+      <button id="wavBtn" class="ghost">Download WAV (Ω)</button>
+      <button id="midiBtn" class="ghost">Download MIDI (Ω)</button>
+      <button id="copyBtn" class="ghost">Copy the window</button>
+    </div>
+    <p class="meta">Root A at 110 Hz. The period is always figured entire — the grid takes a window and walks it, so over the passes the whole period sounds. MIDI drops straight into FL Studio Mobile.</p>
+  </div>
+
+  <p class="foot">16-Bit Music Machine · Chron · Warsaw, Indiana · If Music to Figure, then Modulo &amp; Placing is Melody — therefore the Song.</p>
+</div>
+
+<script>
+"use strict";
+const SCALES = {
+  minpent:[0,3,5,7,10], majpent:[0,2,4,7,9], wholetone:[0,2,4,6,8,10],
+  minor:[0,2,3,5,7,8,10], major:[0,2,4,5,7,9,11],
+  diminished:[0,2,3,5,6,8,9,11], chromatic:[0,1,2,3,4,5,6,7,8,9,10,11]
+};
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const ROOT_MIDI = 45; // A2 = 110 Hz
+let series = [], view = [], offset = 0, converse = false;
+
+const $ = id => document.getElementById(id);
+function steps() { return parseInt($('meter').value, 10); }
+function pisano(m) {
+  const out = [0, 1];
+  while (true) {
+    out.push((out[out.length-1] + out[out.length-2]) % m);
+    if (out[out.length-2] === 0 && out[out.length-1] === 1 && out.length > 2) break;
+  }
+  return out.slice(0, out.length - 2);
+}
+function primesMod(m) {
+  const p = [];
+  for (let c = 2; p.length < 128; c++) {
+    let ok = true;
+    for (let d = 2; d*d <= c; d++) if (c % d === 0) { ok = false; break; }
+    if (ok) p.push(c % m);
+  }
+  return p;
+}
+function bjorklund(n, k) {
+  if (k <= 0) return Array(n).fill(0);
+  if (k >= n) return Array(n).fill(1);
+  let counts = [], remainders = [k], divisor = n - k, level = 0;
+  while (true) {
+    counts.push(Math.floor(divisor / remainders[level]));
+    remainders.push(divisor % remainders[level]);
+    divisor = remainders[level]; level++;
+    if (remainders[level] <= 1) break;
+  }
+  counts.push(divisor);
+  const pattern = [];
+  (function build(l) {
+    if (l === -1) pattern.push(0);
+    else if (l === -2) pattern.push(1);
+    else { for (let i = 0; i < counts[l]; i++) build(l - 1); if (remainders[l] !== 0) build(l - 2); }
+  })(level);
+  const first = pattern.indexOf(1);
+  return pattern.slice(first).concat(pattern.slice(0, first));
+}
+function midiFor(v) {
+  const sc = SCALES[$('scale').value];
+  let idx = v % sc.length;
+  const oct = Math.floor(v / sc.length);
+  if (converse) idx = sc.length - 1 - idx;
+  return ROOT_MIDI + sc[idx] + 12 * oct;
+}
+function freq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+function noteName(m) { return NOTE_NAMES[m % 12] + (Math.floor(m / 12) - 1); }
+function gate() { return bjorklund(steps(), parseInt($('euclid').value, 10)); }
+function sounding(i) {
+  const v = view[i];
+  if (v === undefined) return false;
+  if (gate()[i] !== 1) return false;
+  if (v === 0 && $('zeroRest').checked) return false;
+  return true;
+}
+function chordRootMidi() {
+  const counts = {};
+  view.forEach((v, i) => { if (sounding(i)) { const pc = midiFor(v) % 12; counts[pc] = (counts[pc] || 0) + 1; } });
+  let best = null, bestN = -1;
+  Object.keys(counts).forEach(pc => { if (counts[pc] > bestN) { bestN = counts[pc]; best = parseInt(pc, 10); } });
+  if (best === null) best = 9; // A
+  let m = 33 + ((best - 9 + 12) % 12); // low octave around A1/A2
+  return m;
+}
+function deriveView() {
+  const n = steps();
+  view = Array.from({length: n}, (_, i) => series.length ? series[(offset + i) % series.length] : 0);
+}
+function rebuild(resetOffset) {
+  const src = $('source').value;
+  let m = Math.max(2, Math.min(64, parseInt($('modn').value || '17', 10)));
+  $('customBox').style.display = src === 'custom' ? 'block' : 'none';
+  if (src === 'fib') series = pisano(m);
+  else if (src === 'primes') series = primesMod(m);
+  else series = ($('customNums').value.match(/-?\d+/g) || []).map(Number);
+  if (resetOffset) offset = 0;
+  converse = false;
+  const n = steps();
+  $('euclid').max = n; $('euclidMax').textContent = n;
+  if (parseInt($('euclid').value, 10) > n) $('euclid').value = n;
+  $('euclidVal').textContent = $('euclid').value;
+  deriveView(); render();
+}
+function render() {
+  const g = $('grid'); g.innerHTML = '';
+  const gt = gate();
+  view.forEach((v, i) => {
+    const c = document.createElement('div');
+    const rest = v === 0 && $('zeroRest').checked;
+    c.className = 'cell' + (rest ? ' rest' : '') + (gt[i] !== 1 ? ' gated' : '');
+    c.id = 'cell' + i;
+    c.innerHTML = `<span class="v">${rest ? '(' + v + ')' : v}</span><span class="nn">${gt[i] !== 1 ? '(set)' : (rest ? 'rest' : noteName(midiFor(v)))}</span>`;
+    g.appendChild(c);
+  });
+  const zeros = series.map((v, i) => v === 0 ? i : -1).filter(i => i >= 0);
+  $('meta').innerHTML =
+    `Series: <b>${series.length}</b> numbers figured entire` +
+    (series.length > steps() ? ` — window at step <b>${offset}</b> of the period` : '') +
+    (zeros.length ? ` · zeros at <b>${zeros.join(', ')}</b>` : '') +
+    ` · sounding steps: <b>${view.filter((_, i) => sounding(i)).length}</b> of ${steps()}`;
+}
+/* ------- transformations (F) ------- */
+document.querySelectorAll('[data-t]').forEach(b => b.addEventListener('click', () => {
+  const t = b.dataset.t, n = view.length;
+  if (t === 'reverse') view = view.slice().reverse();
+  else if (t === 'inverse') { const mx = Math.max(...view); view = view.map(v => mx - v); }
+  else if (t === 'transverse') { const h = Math.floor(n / 2); view = view.slice(h).concat(view.slice(0, h)); }
+  else if (t === 'subverse') { const h = Math.floor(n / 2); view = view.map((_, i) => view[(i + h) % n]); }
+  else if (t === 'converse') { converse = !converse; }
+  else if (t === 'reset') { converse = false; deriveView(); }
+  render();
+}));
+/* ------- audio ------- */
+let ctx = null, playing = false, timer = null, stepIdx = 0, nextTime = 0, passCount = 0;
+function stepDur() { return 60 / parseFloat($('bpm').value) / 4; }
+function tone(m, t, dur, vel, dest, type) {
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type || $('wave').value;
+  o.frequency.value = freq(m);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vel, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(dur * 1.7, 0.16));
+  o.connect(g); g.connect(dest || ctx.destination);
+  o.start(t); o.stop(t + Math.max(dur * 1.7, 0.18));
+}
+function playStep(i, t, dest) {
+  const v = view[i], dur = stepDur();
+  const vel = ($('accents').checked && i % 4 === 0) ? 0.5 : 0.34;
+  if ($('embel').checked && i % 4 === 0) {
+    const sc = SCALES[$('scale').value];
+    const below = Math.max(0, v - 1);
+    tone(midiFor(below), t, dur * 0.35, vel * 0.55, dest);
+    tone(midiFor(v), t + dur * 0.35, dur * 0.65, vel, dest);
+  } else {
+    tone(midiFor(v), t, dur, vel, dest);
+  }
+  if ($('accomp').checked && (i === 0 || i === Math.floor(steps() / 2))) {
+    const r = chordRootMidi();
+    const notes = $('voicing').checked ? [r, r + 7, r + 16] : [r, r + 4, r + 7];
+    notes.forEach(mm => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'triangle'; o.frequency.value = freq(mm);
+      const len = dur * steps() / 2;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.10, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      o.connect(g); g.connect(dest || ctx.destination);
+      o.start(t); o.stop(t + len + 0.05);
+    });
+  }
+}
+function schedule() {
+  while (nextTime < ctx.currentTime + 0.16) {
+    const i = stepIdx % steps();
+    if (sounding(i)) playStep(i, nextTime, null);
+    const idx = i, drawAt = Math.max(0, (nextTime - ctx.currentTime) * 1000);
+    setTimeout(() => {
+      document.querySelectorAll('.cell.on').forEach(e => e.classList.remove('on'));
+      const el = $('cell' + idx); if (el) el.classList.add('on');
+    }, drawAt);
+    nextTime += stepDur(); stepIdx++;
+    if (stepIdx % steps() === 0) {
+      passCount++;
+      if ($('phaseWalk').checked && series.length > steps()) {
+        offset = (offset + steps()) % series.length;
+        setTimeout(() => { deriveView(); render(); }, Math.max(0, (nextTime - ctx.currentTime) * 1000));
+      }
+    }
+  }
+}
+function play() {
+  if (!series.length) return;
+  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+  ctx.resume();
+  playing = true; stepIdx = 0; passCount = 0; nextTime = ctx.currentTime + 0.06;
+  timer = setInterval(schedule, 40);
+  $('playBtn').textContent = '■ Stop';
+}
+function stop() {
+  playing = false;
+  if (timer) clearInterval(timer);
+  document.querySelectorAll('.cell.on').forEach(e => e.classList.remove('on'));
+  $('playBtn').textContent = '▶ Play';
+}
+$('playBtn').addEventListener('click', () => playing ? stop() : play());
+/* ------- WAV ------- */
+function bufferToWav(buf) {
+  const sr = buf.sampleRate, data = buf.getChannelData(0), bytes = 44 + data.length * 2;
+  const ab = new ArrayBuffer(bytes), dv = new DataView(ab);
+  const wstr = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+  wstr(0, 'RIFF'); dv.setUint32(4, bytes - 8, true); wstr(8, 'WAVEfmt ');
+  dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+  dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+  wstr(36, 'data'); dv.setUint32(40, data.length * 2, true);
+  let o = 44;
+  for (let i = 0; i < data.length; i++, o += 2) {
+    const s = Math.max(-1, Math.min(1, data[i]));
+    dv.setInt16(o, s * 0x7fff, true);
+  }
+  return new Blob([ab], { type: 'audio/wav' });
+}
+$('wavBtn').addEventListener('click', async () => {
+  if (!series.length) return;
+  const btn = $('wavBtn'); btn.disabled = true; btn.textContent = 'Rendering…';
+  const measures = parseInt($('form').value, 10), dur = stepDur(), n = steps();
+  const totalSteps = measures * n;
+  const off = new OfflineAudioContext(1, Math.ceil(44100 * dur * totalSteps) + 22050, 44100);
+  const keepCtx = ctx, keepView = view, keepOffset = offset;
+  ctx = off;
+  let t = 0.05;
+  for (let mm = 0; mm < measures; mm++) {
+    for (let i = 0; i < n; i++) {
+      if (sounding(i)) playStep(i, t, off.destination);
+      t += dur;
+    }
+    if ($('phaseWalk').checked && series.length > n) { offset = (offset + n) % series.length; deriveView(); }
+  }
+  ctx = keepCtx; view = keepView; offset = keepOffset;
+  const buf = await off.startRendering();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(bufferToWav(buf));
+  a.download = '16-bit-music-machine.wav'; a.click();
+  btn.disabled = false; btn.textContent = 'Download WAV (Ω)';
+});
+/* ------- MIDI ------- */
+function vlq(v) { const b = [v & 0x7f]; v >>= 7; while (v > 0) { b.unshift((v & 0x7f) | 0x80); v >>= 7; } return b; }
+$('midiBtn').addEventListener('click', () => {
+  if (!series.length) return;
+  const PPQ = 96, tick = PPQ / 4, measures = parseInt($('form').value, 10), n = steps();
+  const bpm = parseFloat($('bpm').value), mpq = Math.round(60000000 / bpm);
+  const events = [];
+  const keepView = view, keepOffset = offset;
+  let base = 0;
+  for (let mm = 0; mm < measures; mm++) {
+    for (let i = 0; i < n; i++) {
+      if (sounding(i)) {
+        const vel = ($('accents').checked && i % 4 === 0) ? 100 : 72;
+        events.push({ t: base + i * tick, b: [0x90, midiFor(view[i]), vel] });
+        events.push({ t: base + i * tick + tick - 2, b: [0x80, midiFor(view[i]), 0] });
+      }
+    }
+    if ($('accomp').checked) {
+      const r = chordRootMidi() + 12;
+      const notes = $('voicing').checked ? [r, r + 7, r + 16] : [r, r + 4, r + 7];
+      notes.forEach(mnote => {
+        events.push({ t: base, b: [0x90, mnote, 52] });
+        events.push({ t: base + n * tick - 2, b: [0x80, mnote, 0] });
+      });
+    }
+    if ($('phaseWalk').checked && series.length > n) { offset = (offset + n) % series.length; deriveView(); }
+    base += n * tick;
+  }
+  view = keepView; offset = keepOffset;
+  events.sort((a, b) => a.t - b.t);
+  let track = [0x00, 0xff, 0x51, 0x03, (mpq >> 16) & 0xff, (mpq >> 8) & 0xff, mpq & 0xff];
+  let last = 0;
+  events.forEach(e => { track = track.concat(vlq(e.t - last), e.b); last = e.t; });
+  track = track.concat([0x00, 0xff, 0x2f, 0x00]);
+  const head = [0x4d, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 0, 0, 1, (PPQ >> 8) & 0xff, PPQ & 0xff,
+                0x4d, 0x54, 0x72, 0x6b, (track.length >> 24) & 0xff, (track.length >> 16) & 0xff, (track.length >> 8) & 0xff, track.length & 0xff];
+  const bytes = new Uint8Array(head.concat(track));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([bytes], { type: 'audio/midi' }));
+  a.download = '16-bit-music-machine.mid'; a.click();
+});
+$('copyBtn').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(view.join(', ')); $('copyBtn').textContent = 'Copied ✓'; }
+  catch (e) { $('copyBtn').textContent = 'Copy failed'; }
+  setTimeout(() => $('copyBtn').textContent = 'Copy the window', 1400);
+});
+['source', 'scale'].forEach(id => $(id).addEventListener('change', () => rebuild(true)));
+$('modn').addEventListener('change', () => rebuild(true));
+$('meter').addEventListener('change', () => rebuild(false));
+$('customNums').addEventListener('input', () => rebuild(true));
+$('euclid').addEventListener('input', () => { $('euclidVal').textContent = $('euclid').value; render(); });
+$('bpm').addEventListener('input', e => $('bpmVal').textContent = e.target.value);
+['zeroRest'].forEach(id => $(id).addEventListener('change', render));
+rebuild(true);
+</script>
+</body>
+</html>
