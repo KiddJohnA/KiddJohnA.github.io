@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sequence Music — by Chron</title>
+<meta name="description" content="Mathematical sequences you can hear. Full Pisano periods, figured exactly, played as music. By Jack Kidd / Chron.">
+<style>
+  :root { --bg:#12100c; --panel:#1c1913; --gold:#c9a227; --gold2:#f2d06b; --ink:#f0ead6; --soft:#a99f83; --line:#3a3423; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:Georgia, 'Times New Roman', serif; }
+  .wrap { max-width:920px; margin:0 auto; padding:28px 18px 60px; }
+  h1 { color:var(--gold); font-size:2rem; margin:0 0 2px; letter-spacing:.5px; }
+  h1 .dot { color:var(--gold2); }
+  .sub { color:var(--soft); margin:0 0 22px; font-size:.98rem; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:16px; }
+  label { display:block; font-size:.8rem; text-transform:uppercase; letter-spacing:.12em; color:var(--soft); margin:0 0 6px; }
+  select, input[type=number], textarea { width:100%; background:#0e0c09; color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:9px; font-size:1rem; font-family:inherit; }
+  textarea { min-height:56px; resize:vertical; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:640px){ .row { grid-template-columns:1fr; } }
+  .nums { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
+  .n { min-width:34px; text-align:center; padding:6px 4px; border:1px solid var(--line); border-radius:6px; font-family:Menlo, Consolas, monospace; font-size:.95rem; background:#0e0c09; }
+  .n.zero { color:var(--soft); border-style:dashed; }
+  .n.on { background:var(--gold); color:#12100c; border-color:var(--gold); font-weight:bold; }
+  .meta { color:var(--soft); font-size:.92rem; margin-top:10px; }
+  .meta b { color:var(--gold2); }
+  .btns { display:flex; flex-wrap:wrap; gap:10px; margin-top:6px; }
+  button { background:var(--gold); color:#12100c; border:none; border-radius:8px; padding:12px 20px; font-size:1rem; font-weight:bold; cursor:pointer; font-family:inherit; }
+  button.ghost { background:transparent; color:var(--gold2); border:1px solid var(--gold); font-weight:normal; }
+  button:disabled { opacity:.45; cursor:default; }
+  input[type=range] { width:100%; accent-color:var(--gold); }
+  .chk { display:flex; align-items:center; gap:8px; font-size:.95rem; color:var(--ink); text-transform:none; letter-spacing:0; }
+  .chk input { width:18px; height:18px; accent-color:var(--gold); }
+  .foot { color:var(--soft); font-size:.85rem; text-align:center; margin-top:26px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Sequence Music<span class="dot">.</span></h1>
+  <p class="sub">Mathematical sequences you can hear — figured exactly, the whole period, never cut at the first zero. A Chron instrument by Jack Kidd.</p>
+
+  <div class="panel">
+    <div class="row">
+      <div>
+        <label for="source">Sequence</label>
+        <select id="source">
+          <option value="fib17" selected>Fibonacci mod 17 (the whole period)</option>
+          <option value="fib">Fibonacci mod n…</option>
+          <option value="primes">Primes, mod n…</option>
+          <option value="custom">My own numbers (paste below)</option>
+        </select>
+      </div>
+      <div>
+        <label for="modn">Modulus n (2–64)</label>
+        <input type="number" id="modn" value="17" min="2" max="64">
+      </div>
+    </div>
+    <div id="customBox" style="display:none; margin-top:14px;">
+      <label for="customNums">Your numbers — from a computation, a post, anywhere</label>
+      <textarea id="customNums" placeholder="Paste numbers, e.g. 0, 1, 1, 2, 3, 5, 8, 13…"></textarea>
+    </div>
+    <div class="nums" id="nums"></div>
+    <p class="meta" id="meta"></p>
+  </div>
+
+  <div class="panel">
+    <div class="row">
+      <div>
+        <label for="scale">Scale the numbers play on</label>
+        <select id="scale">
+          <option value="minpent" selected>Minor pentatonic</option>
+          <option value="majpent">Major pentatonic</option>
+          <option value="minor">Natural minor</option>
+          <option value="major">Major</option>
+          <option value="chromatic">Chromatic (every step)</option>
+        </select>
+      </div>
+      <div>
+        <label for="wave">Voice</label>
+        <select id="wave">
+          <option value="sine" selected>Sine (soft)</option>
+          <option value="triangle">Triangle</option>
+          <option value="square">Square</option>
+          <option value="sawtooth">Sawtooth</option>
+        </select>
+      </div>
+    </div>
+    <div class="row" style="margin-top:14px;">
+      <div>
+        <label for="bpm">Tempo — <span id="bpmVal">134</span> BPM (2 steps per beat)</label>
+        <input type="range" id="bpm" min="50" max="220" value="134">
+      </div>
+      <div>
+        <label>Zeros</label>
+        <label class="chk"><input type="checkbox" id="zeroRest" checked> Zero is a rest — counted silence, not a note</label>
+        <label class="chk"><input type="checkbox" id="loop" checked> Loop the period</label>
+      </div>
+    </div>
+    <div class="btns" style="margin-top:16px;">
+      <button id="playBtn">▶ Play</button>
+      <button id="wavBtn" class="ghost">Download WAV</button>
+      <button id="copyBtn" class="ghost">Copy the numbers</button>
+    </div>
+    <p class="meta" id="playMeta">Root: A at 110 Hz — the numbers climb the scale and rise an octave each time they wrap it.</p>
+  </div>
+
+  <p class="foot">Sequence Music · Chron · Made in Warsaw, Indiana · The period is computed in full — the loop restarts only when the pair 0, 1 returns.</p>
+</div>
+
+<script>
+"use strict";
+const SCALES = {
+  minpent: [0, 3, 5, 7, 10],
+  majpent: [0, 2, 4, 7, 9],
+  minor:   [0, 2, 3, 5, 7, 8, 10],
+  major:   [0, 2, 4, 5, 7, 9, 11],
+  chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+};
+const ROOT = 110; // A
+let seq = [];
+let zeroIdx = [];
+
+function pisano(m) {
+  const out = [0, 1];
+  while (true) {
+    const n = (out[out.length - 1] + out[out.length - 2]) % m;
+    out.push(n);
+    if (out[out.length - 2] === 0 && out[out.length - 1] === 1 && out.length > 2) break;
+  }
+  return out.slice(0, out.length - 2);
+}
+function primesMod(m) {
+  const primes = [];
+  for (let c = 2; primes.length < 64; c++) {
+    let isP = true;
+    for (let d = 2; d * d <= c; d++) if (c % d === 0) { isP = false; break; }
+    if (isP) primes.push(c % m);
+  }
+  return primes;
+}
+function freqFor(v) {
+  const scale = SCALES[document.getElementById('scale').value];
+  const idx = v % scale.length;
+  const oct = Math.floor(v / scale.length);
+  const semis = scale[idx] + 12 * oct;
+  return ROOT * Math.pow(2, semis / 12);
+}
+function rebuild() {
+  const src = document.getElementById('source').value;
+  let m = parseInt(document.getElementById('modn').value || '17', 10);
+  m = Math.max(2, Math.min(64, m));
+  document.getElementById('customBox').style.display = src === 'custom' ? 'block' : 'none';
+  if (src === 'fib17') { document.getElementById('modn').value = 17; seq = pisano(17); }
+  else if (src === 'fib') seq = pisano(m);
+  else if (src === 'primes') seq = primesMod(m);
+  else {
+    const raw = document.getElementById('customNums').value.match(/-?\d+/g) || [];
+    seq = raw.map(Number);
+  }
+  zeroIdx = seq.map((v, i) => v === 0 ? i : -1).filter(i => i >= 0);
+  const box = document.getElementById('nums');
+  box.innerHTML = '';
+  seq.forEach((v, i) => {
+    const s = document.createElement('span');
+    s.className = 'n' + (v === 0 ? ' zero' : '');
+    s.id = 'n' + i;
+    s.textContent = v;
+    box.appendChild(s);
+  });
+  const meta = document.getElementById('meta');
+  if (src === 'custom') {
+    meta.innerHTML = seq.length ? `<b>${seq.length}</b> numbers pasted in — they'll play in order.` : 'Paste some numbers above and they will appear here.';
+  } else if (src === 'primes') {
+    meta.innerHTML = `First <b>64 primes</b>, mod ${src === 'fib17' ? 17 : m} — each prime reduced by the modulus, played in order.`;
+  } else {
+    meta.innerHTML = `Full period: <b>${seq.length}</b> numbers — the loop restarts only when the pair 0, 1 returns.` +
+      (zeroIdx.length ? ` Zeros (rests) at steps <b>${zeroIdx.join(', ')}</b>.` : '');
+  }
+}
+/* ---------- playback ---------- */
+let ctx = null, playing = false, timer = null, step = 0, nextTime = 0;
+function stepDur() { return 60 / parseFloat(document.getElementById('bpm').value) / 2; }
+function playNote(freq, t, dur, dest) {
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = document.getElementById('wave').value;
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.5, t + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(dur * 1.8, 0.18));
+  o.connect(g); g.connect(dest || ctx.destination);
+  o.start(t); o.stop(t + Math.max(dur * 1.8, 0.2));
+}
+function schedule() {
+  while (nextTime < ctx.currentTime + 0.18) {
+    const i = step % seq.length;
+    const v = seq[i];
+    const isRest = v === 0 && document.getElementById('zeroRest').checked;
+    if (!isRest && seq.length) playNote(freqFor(v), nextTime, stepDur());
+    const drawAt = Math.max(0, (nextTime - ctx.currentTime) * 1000);
+    const idx = i;
+    setTimeout(() => {
+      document.querySelectorAll('.n.on').forEach(e => e.classList.remove('on'));
+      const el = document.getElementById('n' + idx);
+      if (el) el.classList.add('on');
+    }, drawAt);
+    nextTime += stepDur();
+    step++;
+    if (!document.getElementById('loop').checked && step >= seq.length) { stop(); break; }
+  }
+}
+function play() {
+  if (!seq.length) return;
+  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+  ctx.resume();
+  playing = true; step = 0; nextTime = ctx.currentTime + 0.06;
+  timer = setInterval(schedule, 40);
+  document.getElementById('playBtn').textContent = '■ Stop';
+}
+function stop() {
+  playing = false;
+  if (timer) clearInterval(timer);
+  document.querySelectorAll('.n.on').forEach(e => e.classList.remove('on'));
+  document.getElementById('playBtn').textContent = '▶ Play';
+}
+document.getElementById('playBtn').addEventListener('click', () => playing ? stop() : play());
+/* ---------- WAV export ---------- */
+function bufferToWav(buf) {
+  const nCh = 1, sr = buf.sampleRate, data = buf.getChannelData(0);
+  const bytes = 44 + data.length * 2;
+  const ab = new ArrayBuffer(bytes), dv = new DataView(ab);
+  const wstr = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+  wstr(0, 'RIFF'); dv.setUint32(4, bytes - 8, true); wstr(8, 'WAVEfmt ');
+  dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, nCh, true);
+  dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+  wstr(36, 'data'); dv.setUint32(40, data.length * 2, true);
+  let o = 44;
+  for (let i = 0; i < data.length; i++, o += 2) {
+    const s = Math.max(-1, Math.min(1, data[i]));
+    dv.setInt16(o, s * 0x7fff, true);
+  }
+  return new Blob([ab], { type: 'audio/wav' });
+}
+document.getElementById('wavBtn').addEventListener('click', async () => {
+  if (!seq.length) return;
+  const btn = document.getElementById('wavBtn');
+  btn.disabled = true; btn.textContent = 'Rendering…';
+  const dur = stepDur();
+  const off = new OfflineAudioContext(1, Math.ceil(44100 * dur * seq.length) + 44100, 44100);
+  const keep = ctx; ctx = off;
+  const dest = off.destination;
+  seq.forEach((v, i) => {
+    const isRest = v === 0 && document.getElementById('zeroRest').checked;
+    if (!isRest) playNote(freqFor(v), 0.05 + i * dur, dur, dest);
+  });
+  ctx = keep;
+  const buf = await off.startRendering();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(bufferToWav(buf));
+  a.download = 'sequence-music.wav';
+  a.click();
+  btn.disabled = false; btn.textContent = 'Download WAV';
+});
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(seq.join(', ')); document.getElementById('copyBtn').textContent = 'Copied ✓'; }
+  catch (e) { document.getElementById('copyBtn').textContent = 'Copy failed'; }
+  setTimeout(() => document.getElementById('copyBtn').textContent = 'Copy the numbers', 1400);
+});
+['source', 'modn', 'scale'].forEach(id => document.getElementById(id).addEventListener('change', rebuild));
+document.getElementById('customNums').addEventListener('input', rebuild);
+document.getElementById('bpm').addEventListener('input', e => document.getElementById('bpmVal').textContent = e.target.value);
+rebuild();
+</script>
+</body>
+</html>
