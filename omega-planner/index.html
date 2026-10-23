@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ω Planner — Wordmaths Business &amp; Money</title>
+<style>
+  :root { --bg:#04060c; --panel:#0a101f; --line:#1d2c4d; --ink:#eaf2ff; --dim:#9db2d8;
+    --neon:#19d3ff; --neon2:#7df0ff; --good:#59ffa0; --warn:#ffd166; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+    font-family: Georgia, 'Times New Roman', serif; line-height:1.5; }
+  .wrap { max-width:62em; margin:0 auto; padding:1em 1em 4em; }
+  .masthead { font-family: Futura, 'Century Gothic', 'Trebuchet MS', Verdana, sans-serif;
+    font-size:1.6em; margin:.4em 0 0; }
+  .masthead .dot { font-size:1.9em; color:var(--neon); line-height:0; }
+  .kicker { font-family: Futura, Verdana, sans-serif; letter-spacing:.25em; font-size:.75em;
+    color:var(--dim); text-transform:uppercase; }
+  h1 { font-family: Futura, 'Century Gothic', Verdana, sans-serif; font-weight:600; font-size:1.8em; margin:.3em 0 .1em; }
+  h2 { font-family: Futura, Verdana, sans-serif; font-size:1.15em; margin:1.6em 0 .5em; color:var(--neon2); }
+  hr { border:0; border-top:1px solid var(--line); margin:1.2em 0; }
+  .panel { background:var(--panel); border:1px solid var(--line); padding:1em 1.2em; margin:1em 0; }
+  label { display:block; font-size:.92em; color:var(--dim); margin:.7em 0 .2em; }
+  input, select { width:100%; padding:.5em; font-size:1em; background:#060b18; color:var(--ink);
+    border:1px solid var(--line); font-family:inherit; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:0 1.2em; }
+  @media (max-width:640px){ .grid { grid-template-columns:1fr; } }
+  button { font-family: Futura, Verdana, sans-serif; letter-spacing:.08em; cursor:pointer;
+    background:var(--neon); color:#02131c; border:0; padding:.8em 1.4em; font-size:1em; margin:.6em .4em .2em 0; }
+  button.ghost { background:transparent; color:var(--neon); border:1px solid var(--neon); }
+  table { border-collapse:collapse; width:100%; margin:.6em 0; font-size:.95em; }
+  td, th { border:1px solid var(--line); padding:.4em .6em; text-align:right; }
+  td:first-child, th:first-child { text-align:left; }
+  th { color:var(--neon2); font-family: Futura, Verdana, sans-serif; font-size:.85em; letter-spacing:.05em; }
+  .big { font-size:1.5em; color:var(--good); }
+  .stat { display:inline-block; margin:.3em 1.4em .3em 0; }
+  .stat b { display:block; font-size:1.35em; color:#fff; }
+  .stat span { font-size:.8em; color:var(--dim); text-transform:uppercase; letter-spacing:.1em; }
+  .ifline { font-style:italic; border-left:3px solid var(--neon); padding:.4em 0 .4em .9em; margin:1em 0; }
+  .small { font-size:.88em; color:var(--dim); }
+  #plan { white-space:pre-wrap; font-family:'Courier New', monospace; font-size:.9em;
+    background:#060b18; border:1px solid var(--line); padding:1em; }
+  .warn { color:var(--warn); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="masthead">Chron<span class="dot">.</span></p>
+  <p class="kicker">Wordmaths Business &amp; Money Computation</p>
+  <h1>Ω PLANNER</h1>
+  <p>Answer the five questions. The planner does the arithmetic itself — real numbers,
+  no guessing — and writes your business plan: costs, pricing, break-even, and the first year, month by month.</p>
+
+  <div class="panel">
+    <h2 style="margin-top:0">Start from a real product line</h2>
+    <label>Preset (researched October 2026 — every number stays editable)</label>
+    <select id="preset">
+      <option value="sola">Sola wood flower diffuser line (essential oil)</option>
+      <option value="blank">Blank — my own product</option>
+    </select>
+    <div class="grid">
+      <div><label>Business / product name</label><input id="f_name" type="text"></div>
+      <div><label>How is it made or sourced?</label>
+        <select id="f_source">
+          <option>Assembled from components</option>
+          <option>Handcrafted by me</option>
+          <option>Bought finished, resold</option>
+        </select></div>
+      <div><label>Status</label>
+        <select id="f_status"><option>Early-stage concept</option><option>Already selling</option></select></div>
+      <div><label>Who buys it? (the market)</label>
+        <select id="f_market">
+          <option>Direct to customers (home decor, gifts)</option>
+          <option>Boutiques, spas, shops (B2B)</option>
+          <option>Events (weddings, staging)</option>
+        </select></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2 style="margin-top:0">The numbers</h2>
+    <div class="grid">
+      <div><label>Cost to make/buy ONE unit ($)</label><input id="f_unitcost" type="number" step="0.01" min="0"></div>
+      <div><label>Selling price of ONE unit ($)</label><input id="f_price" type="number" step="0.01" min="0"></div>
+      <div><label>Shipping + packaging per order ($)</label><input id="f_ship" type="number" step="0.01" min="0"></div>
+      <div><label>Marketplace / card fees (%)</label><input id="f_fee" type="number" step="0.1" min="0"></div>
+      <div><label>Current sales per month (units, 0 if new)</label><input id="f_current" type="number" step="1" min="0"></div>
+      <div><label>Target sales per month (units)</label><input id="f_target" type="number" step="1" min="0"></div>
+      <div><label>Fixed costs per month ($ — ads, fees, supplies)</label><input id="f_fixed" type="number" step="1" min="0"></div>
+      <div><label>Startup money needed once ($ — stock, tools, labels)</label><input id="f_startup" type="number" step="1" min="0"></div>
+      <div><label>Hours you can give it per week</label><input id="f_hours" type="number" step="1" min="0"></div>
+      <div><label>Months to judge it over (horizon)</label><input id="f_horizon" type="number" step="1" min="1"></div>
+    </div>
+    <button id="run">FIGURE THE PLAN</button>
+    <p class="small">Ramp assumption, stated plain: months 1–3 run at 40% of target, months 4–6 at 70%, then 100%.
+    If you are already selling, the ramp starts from your current sales instead.</p>
+  </div>
+
+  <div id="results" style="display:none">
+    <hr>
+    <h2>The Ω coordinates</h2>
+    <div id="coords"></div>
+    <p class="ifline" id="ifline"></p>
+    <h2>The headline numbers</h2>
+    <div id="stats"></div>
+    <h2>The first year, month by month</h2>
+    <div id="yeartable"></div>
+    <h2>Your business plan</h2>
+    <div id="plan"></div>
+    <button id="dl">DOWNLOAD THE PLAN (.md)</button>
+    <button id="copy" class="ghost">COPY FOR FACEBOOK</button>
+    <p class="small">Estimates from your inputs — real arithmetic on real prices, not a promise of sales.
+    Check supplier prices before spending; they move.</p>
+  </div>
+
+  <hr>
+  <p class="small">Ω Planner by Chron — figured with the Wordmaths computation: Business to Success.
+  One Business in, Profit out.</p>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const money = n => (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString("en-US", {maximumFractionDigits: 0});
+const money2 = n => "$" + Math.abs(n).toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+const PRESETS = {
+  sola: { name: "Sola Flower Diffuser Line", source: "Assembled from components",
+    unitcost: 4.50, price: 19.99, ship: 4.00, fee: 10, current: 0, target: 100,
+    fixed: 100, startup: 600, hours: 10, horizon: 12 },
+  blank: { name: "", source: "Assembled from components",
+    unitcost: 0, price: 0, ship: 0, fee: 10, current: 0, target: 50,
+    fixed: 0, startup: 0, hours: 10, horizon: 12 }
+};
+function applyPreset(key) {
+  const p = PRESETS[key];
+  $("f_name").value = p.name; $("f_source").value = p.source;
+  $("f_unitcost").value = p.unitcost; $("f_price").value = p.price;
+  $("f_ship").value = p.ship; $("f_fee").value = p.fee;
+  $("f_current").value = p.current; $("f_target").value = p.target;
+  $("f_fixed").value = p.fixed; $("f_startup").value = p.startup;
+  $("f_hours").value = p.hours; $("f_horizon").value = p.horizon;
+}
+$("preset").addEventListener("change", e => applyPreset(e.target.value));
+applyPreset("sola");
+
+function figure() {
+  const v = id => parseFloat($(id).value) || 0;
+  const name = $("f_name").value.trim() || "The Business";
+  const source = $("f_source").value, status = $("f_status").value, market = $("f_market").value;
+  const unit = v("f_unitcost"), price = v("f_price"), ship = v("f_ship"), fee = v("f_fee") / 100;
+  const current = v("f_current"), target = v("f_target"), fixed = v("f_fixed");
+  const startup = v("f_startup"), hours = v("f_hours"), horizon = Math.max(1, Math.round(v("f_horizon")));
+
+  const feePer = price * fee;
+  const margin = price - unit - ship - feePer;            // kept from each sale
+  const marginPct = price > 0 ? margin / price * 100 : 0;
+  const breakEven = margin > 0 ? Math.ceil(fixed / margin) : Infinity;
+  const C = current * price, Z = target * price;          // Ω coordinates
+  const gap = Z - C;
+  const leverage = unit > 0 ? price / unit : 0;
+  const monthsToRecover = (target * margin - fixed) > 0 && startup > 0
+    ? Math.ceil(startup / (target * margin - fixed)) : null;
+
+  // month-by-month with the stated ramp
+  let rows = [], cum = -startup, totRev = 0, totProfit = 0, recoverMonth = null;
+  for (let m = 1; m <= horizon; m++) {
+    let units;
+    if (current > 0 && target > current) {
+      const ramp = m <= 3 ? 0.25 : m <= 6 ? 0.6 : 1;
+      units = Math.round(current + (target - current) * ramp);
+    } else {
+      const ramp = m <= 3 ? 0.4 : m <= 6 ? 0.7 : 1;
+      units = Math.round(target * ramp);
+    }
+    const rev = units * price;
+    const profit = units * margin - fixed;
+    cum += profit; totRev += rev; totProfit += profit;
+    if (recoverMonth === null && cum >= 0 && startup > 0) recoverMonth = m;
+    rows.push({ m, units, rev, profit, cum });
+  }
+  const realism = marginPct >= 50 ? "Strong" : marginPct >= 30 ? "Workable" : marginPct > 0 ? "Thin" : "Under water";
+
+  $("coords").innerHTML =
+    `<div class="stat"><b>${money(C)}</b><span>C · Current / month</span></div>` +
+    `<div class="stat"><b>${money(Z)}</b><span>Z · Target / month</span></div>` +
+    `<div class="stat"><b>${money(gap)}</b><span>δ · The Gap</span></div>` +
+    `<div class="stat"><b>${horizon} mo</b><span>h · Horizon</span></div>` +
+    `<div class="stat"><b>${hours} h/wk</b><span>i · Capacity</span></div>` +
+    `<div class="stat"><b>${leverage ? leverage.toFixed(1) + "×" : "—"}</b><span>γ · Leverage (price ÷ cost)</span></div>` +
+    `<div class="stat"><b>${realism}</b><span>e · Realism (from margin)</span></div>`;
+  $("ifline").textContent =
+    `If ${name} to Success, then Product & Selling is Revenue — with ${money2(margin)} kept on every ${money2(price)} sale, the Gap of ${money(gap)} a month closes at ${isFinite(breakEven) ? breakEven : "—"} sales a month — therefore the Plan.`;
+  $("stats").innerHTML =
+    `<div class="stat"><b>${money2(margin)}</b><span>kept per sale</span></div>` +
+    `<div class="stat"><b>${marginPct.toFixed(0)}%</b><span>gross margin</span></div>` +
+    `<div class="stat"><b>${isFinite(breakEven) ? breakEven + " / mo" : "never"}</b><span>break-even sales</span></div>` +
+    `<div class="stat"><b>${money(totRev)}</b><span>year revenue (ramped)</span></div>` +
+    `<div class="stat"><b class="big">${money(totProfit - startup)}</b><span>year profit after startup</span></div>` +
+    `<div class="stat"><b>${recoverMonth ? "month " + recoverMonth : (startup === 0 ? "no startup cost" : "not in horizon")}</b><span>startup recovered</span></div>` +
+    (margin <= 0 ? `<p class="warn">Warning: at this price and cost, every sale loses money before fixed costs. Raise the price or cut the unit cost first.</p>` : "");
+
+  $("yeartable").innerHTML = "<table><tr><th>Month</th><th>Units</th><th>Revenue</th><th>Profit</th><th>Running total</th></tr>" +
+    rows.map(r => `<tr><td>${r.m}</td><td>${r.units}</td><td>${money(r.rev)}</td><td>${money(r.profit)}</td><td>${money(r.cum)}</td></tr>`).join("") + "</table>";
+
+  const plan =
+`${name.toUpperCase()} — BUSINESS PLAN
+Figured by the Ω Planner (Wordmaths Business & Money Computation)
+Status: ${status}. Sourcing: ${source}. Market: ${market}.
+
+1. THE PRODUCT
+${name}, sold at ${money2(price)} each, costing ${money2(unit)} a unit to ${source === "Bought finished, resold" ? "buy" : "make/assemble"}.
+
+2. THE UNIT NUMBERS (per sale)
+Price ${money2(price)} − unit cost ${money2(unit)} − shipping & packaging ${money2(ship)} − fees ${money2(feePer)} = ${money2(margin)} kept (${marginPct.toFixed(0)}% margin).
+Leverage γ: the price is ${leverage ? leverage.toFixed(1) : "—"}× the unit cost.
+
+3. STARTUP
+One-time money needed: ${money(startup)}. Monthly fixed costs: ${money(fixed)}.
+Capacity i: ${hours} hours a week.
+
+4. BREAK-EVEN AND THE GAP
+Break-even is ${isFinite(breakEven) ? breakEven + " sales a month" : "not reachable at this margin"} — that covers the fixed costs.
+Current revenue C: ${money(C)} a month. Target Z: ${money(Z)} a month. The gap δ is ${money(gap)} a month.
+At full target pace the startup is recovered in ${monthsToRecover ? monthsToRecover + " months" : "—"}; on the ramped year, ${recoverMonth ? "month " + recoverMonth : "not within the horizon"}.
+
+5. THE FIRST YEAR (ramped: 40% / 70% / 100% of target)
+Revenue ${money(totRev)} · Profit before startup ${money(totProfit)} · After the ${money(startup)} startup, ${money(totProfit - startup)}.
+
+6. NEXT PHYSICAL ACTIONS (φ)
+1) Confirm the unit cost with a real supplier quote — prices move.
+2) Make or buy 10 sample units; photograph them honestly, at true size.
+3) List them where the buyers already are; aim the first month at ${rows[0] ? rows[0].units : target} sales.
+4) Re-run this plan with the real first-month numbers.
+
+Realism e: ${realism}. Estimates from stated inputs — arithmetic is exact, sales are not promised.`;
+
+  $("plan").textContent = plan;
+  $("results").style.display = "block";
+  $("dl").onclick = () => {
+    const blob = new Blob([plan], { type: "text/markdown" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "business-plan.md"; a.click();
+    URL.revokeObjectURL(a.href);
+  };
+  $("copy").onclick = () => {
+    const short = `${name} — figured with the Ω Planner:\nPrice ${money2(price)}, cost ${money2(unit)}, ${money2(margin)} kept per sale (${marginPct.toFixed(0)}%).\nBreak-even ${isFinite(breakEven) ? breakEven : "—"} sales a month. Target ${money(Z)} a month.\nOne Business in, Profit out.`;
+    navigator.clipboard.writeText(short).then(() => { $("copy").textContent = "COPIED!"; setTimeout(() => $("copy").textContent = "COPY FOR FACEBOOK", 1500); });
+  };
+  $("results").scrollIntoView({ behavior: "smooth" });
+}
+$("run").addEventListener("click", figure);
+</script>
+</body>
+</html>
